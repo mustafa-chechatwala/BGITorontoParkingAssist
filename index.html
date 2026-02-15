@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>License Plate Lookup</title>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<style>
+body { font-family: Arial, sans-serif; padding: 15px; }
+input, button { padding: 10px; margin: 5px 0; width: 100%; }
+video, canvas { width: 100%; margin-top: 10px; }
+.result { margin-top: 15px; background: #f4f4f4; padding: 10px; }
+</style>
+</head>
+
+<body>
+
+<h2>BGI Toronto - Vehicle Lookup</h2>
+
+
+<label>Enter User Email:</label>
+<input id="user" placeholder="Enter user email" style="field-sizing: content;  min-width: 50px;  max-width: 350px;"/><br /><br />
+
+<button onclick="startCamera()">Scan License Plate</button>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas" hidden></canvas>
+
+<label>Or enter manually:</label>
+<input id="plateInput" placeholder="Enter license plate" style="field-sizing: content;  min-width: 50px;  max-width: 350px;"/>
+
+<button onclick="lookupPlate()">Submit</button>
+
+<div id="output" class="result"></div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwXcyrh6X7ByxCe_KnA6AlijaNXfK4zbYzLhGqjMH0nDvKc_23bMdyY7sIwZ7q3btoM/exec";
+
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+  document.getElementById("video").srcObject = stream;
+
+  setTimeout(capturePlate, 3000); // Auto-capture after 3 sec
+}
+
+async function capturePlate() {
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+
+  const { data: { text } } = await Tesseract.recognize(canvas, "eng");
+  const plate = text.replace(/[^A-Z0-9]/gi, "").substring(0, 10);
+
+  document.getElementById("plateInput").value = plate;
+}
+
+async function lookupPlate() {
+  const plate = document.getElementById("plateInput").value.trim();
+  if (!plate) return alert("Enter a license plate");
+  
+  const user = document.getElementById("user").value.trim();
+  if (!user) return alert("Enter valid user email address");
+
+  const res = await fetch(`${API_URL}?user=${user}&plate=${plate}`);
+  const data = await res.json();
+
+  if (data.error) {
+    document.getElementById("output").innerHTML = data.error;
+    return;
+  }
+
+  document.getElementById("output").innerHTML = `
+    <h3>${data.matchedPlateType} Vehicle Match</h3>
+
+    <strong>Primary Vehicle</strong><br>
+    Make & Model: ${data["Primary Vehicle Make and Model"]}<br>
+    Plate: ${data["Primary Vehicle License Plate Number"]}<br>
+    Driver: ${data["Primary Vehicle Driver Name"]}<br>
+    Phone: ${data["Primary Vehicle Driver Contact Number"]}<br>
+    Email: ${data["Primary Vehicle Driver Contact Email"]}<br><br>
+
+    <strong>Secondary Vehicle</strong><br>
+    Make & Model: ${data["Secondary Vehicle Make and Model"]}<br>
+    Plate: ${data["Secondary Vehicle License Plate Number"]}<br>
+    Driver: ${data["Secondary Vehicle Driver Name"]}<br>
+    Phone: ${data["Secondary Vehicle Driver Contact Number"]}<br>
+    Email: ${data["Secondary Vehicle Driver Contact Email"]}<br><br>
+	
+	<strong>Additional Vehicle(s)</strong><br>
+	Make and Model: ${data["Additional Vehicle(s) Make and Model"]}<br>
+    Plate: ${data["Additional Vehicle(s) License Plate Number"]}<br>
+    Driver Details: ${data["Additional Vehicle(s) Driver Details"]}<br><br>
+  `;
+}
+
+</script>
+
+</body>
+</html>
