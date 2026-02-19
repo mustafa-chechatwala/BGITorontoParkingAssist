@@ -95,25 +95,42 @@ canvas {
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwXcyrh6X7ByxCe_KnA6AlijaNXfK4zbYzLhGqjMH0nDvKc_23bMdyY7sIwZ7q3btoM/exec";
 
+let currentStream = null;
+
 async function startCamera() {
+  document.querySelector("button").innerText = "Scanning...";
+
   document.getElementById("timerLoading").innerHTML = `⌛`;
   document.getElementById("output").innerHTML = "";
 
   let user = document.getElementById("user").value;
   if (!user || user.trim() === "") {
-	document.getElementById("timerLoading").innerHTML = `
-		  <p style="color: red;">Please enter user email</p>
-		`;
-		return;
+    document.getElementById("timerLoading").innerHTML = `
+      <p style="color: red;">Please enter user email</p>
+    `;
+	  document.querySelector("button").innerText = "Scan License Plate";
+    return;
   }
 
-  video.style.display = "block"; 
+  const video = document.getElementById("video");
 
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-  document.getElementById("video").srcObject = stream;
+  // 🔑 Show video again if it was hidden
+  video.style.display = "block";
 
-  setTimeout(capturePlate, 3000); // Auto-capture after 3 sec
+  // 🔑 Stop any previous camera stream
+  if (currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+  }
+
+  currentStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "environment" }
+  });
+
+  video.srcObject = currentStream;
+
+  setTimeout(capturePlate, 3000);
 }
+
 
 async function capturePlate() {
   const video = document.getElementById("video");
@@ -131,6 +148,8 @@ async function capturePlate() {
   document.getElementById("plateInput").value = plate;
 
   video.style.display = "none"; // 🔑 frees screen space
+  
+  document.querySelector("button").innerText = "Scan License Plate";
 
   lookupPlate();
 }
@@ -188,4 +207,3 @@ async function lookupPlate() {
 
 </body>
 </html>
-
