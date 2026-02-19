@@ -17,16 +17,21 @@ video, canvas { width: 100%; margin-top: 10px; }
 
 <body>
 
-<h2>BGI Toronto - Vehicle Lookup</h2>
+<h3>BGI Toronto - Vehicle Lookup</h3>
 
 
-<label>Enter User Email:</label>
-<input id="user" placeholder="Enter user email" style="field-sizing: content;  min-width: 50px;  max-width: 350px;"/><br /><br />
+<hr />
+<label for="user" style="color: red;">*Please enter user email:</label>
+<input id="user" placeholder="Your email for authentication" style="width:100%; max-width:350px;">
+<hr />
 
 <button onclick="startCamera()">Scan License Plate</button>
 
-<video id="video" autoplay playsinline></video>
-<canvas id="canvas" hidden></canvas>
+<div id="scanlicenseplate">
+	<div id="timerLoading"></div>
+	<video id="video" autoplay playsinline></video>
+	<canvas id="canvas" hidden></canvas>
+</div>
 
 <label>Or enter manually:</label>
 <input id="plateInput" placeholder="Enter license plate" style="field-sizing: content;  min-width: 50px;  max-width: 350px;"/>
@@ -39,6 +44,17 @@ video, canvas { width: 100%; margin-top: 10px; }
 const API_URL = "https://script.google.com/macros/s/AKfycbwXcyrh6X7ByxCe_KnA6AlijaNXfK4zbYzLhGqjMH0nDvKc_23bMdyY7sIwZ7q3btoM/exec";
 
 async function startCamera() {
+  document.getElementById("timerLoading").innerHTML = `⌛`;
+  document.getElementById("output").innerHTML = "";
+
+  let user = document.getElementById("user").value;
+  if (!user || user.trim() === "") {
+	document.getElementById("timerLoading").innerHTML = `
+		  <p style="color: red;">Please enter user email</p>
+		`;
+		return;
+  }
+
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
   document.getElementById("video").srcObject = stream;
 
@@ -58,16 +74,26 @@ async function capturePlate() {
   const plate = text.replace(/[^A-Z0-9]/gi, "").substring(0, 10);
 
   document.getElementById("plateInput").value = plate;
+  
+  lookupPlate();
 }
 
 async function lookupPlate() {
+  document.getElementById("timerLoading").innerHTML = "";
+  document.getElementById("output").innerHTML = `⌛`;
+
+  let userr = document.getElementById("user").value;
+  if (!userr || userr.trim() === "") {
+	document.getElementById("output").innerHTML = `
+		  <p style="color: red;">Please enter user email</p>
+		`;
+		return;
+  }
+
   const plate = document.getElementById("plateInput").value.trim();
   if (!plate) return alert("Enter a license plate");
-  
-  const user = document.getElementById("user").value.trim();
-  if (!user) return alert("Enter valid user email address");
 
-  const res = await fetch(`${API_URL}?user=${user}&plate=${plate}`);
+  const res = await fetch(`${API_URL}?user=${userr}&plate=${plate}`);
   const data = await res.json();
 
   if (data.error) {
@@ -97,6 +123,7 @@ async function lookupPlate() {
     Plate: ${data["Additional Vehicle(s) License Plate Number"]}<br>
     Driver Details: ${data["Additional Vehicle(s) Driver Details"]}<br><br>
   `;
+  
 }
 
 </script>
