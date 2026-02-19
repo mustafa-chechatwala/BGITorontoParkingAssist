@@ -6,13 +6,64 @@
 <title>License Plate Lookup</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
 <style>
-body { font-family: Arial, sans-serif; padding: 15px; }
-input, button { padding: 10px; margin: 5px 0; width: 100%; }
-video, canvas { width: 100%; margin-top: 10px; }
-.result { margin-top: 15px; background: #f4f4f4; padding: 10px; }
+body {
+  font-family: Arial, sans-serif;
+  padding: 12px;
+  margin: 0;
+}
+
+h3 {
+  margin-top: 0;
+}
+
+/* Inputs & buttons */
+input, button {
+  padding: 10px;
+  margin: 6px 0;
+  width: 100%;
+  max-width: 350px;
+  box-sizing: border-box;
+}
+
+/* Camera wrapper */
+#scanlicenseplate {
+  margin-top: 10px;
+}
+
+/* Responsive camera feed */
+video {
+  width: 100%;
+  max-height: 220px;      /* 🔑 limits space on mobile */
+  object-fit: cover;     /* keeps aspect ratio */
+  border-radius: 8px;
+}
+
+/* Canvas hidden */
+canvas {
+  display: none;
+}
+
+.result {
+  margin-top: 12px;
+  background: #f4f4f4;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Mobile-specific tuning */
+@media (max-width: 480px) {
+  video {
+    max-height: 180px;   /* even tighter on small phones */
+  }
+
+  body {
+    padding: 10px;
+  }
+}
 </style>
+
 </head>
 
 <body>
@@ -36,6 +87,7 @@ video, canvas { width: 100%; margin-top: 10px; }
 <label>Or enter manually:</label>
 <input id="plateInput" placeholder="Enter license plate" style="field-sizing: content;  min-width: 50px;  max-width: 350px;"/>
 
+<br />
 <button onclick="lookupPlate()">Submit</button>
 
 <div id="output" class="result"></div>
@@ -64,6 +116,7 @@ async function startCamera() {
 async function capturePlate() {
   const video = document.getElementById("video");
   const canvas = document.getElementById("canvas");
+
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
@@ -74,9 +127,12 @@ async function capturePlate() {
   const plate = text.replace(/[^A-Z0-9]/gi, "").substring(0, 10);
 
   document.getElementById("plateInput").value = plate;
-  
+
+  video.style.display = "none"; // 🔑 frees screen space
+
   lookupPlate();
 }
+
 
 async function lookupPlate() {
   document.getElementById("timerLoading").innerHTML = "";
