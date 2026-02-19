@@ -107,6 +107,8 @@ async function startCamera() {
 		return;
   }
 
+  video.style.display = "block"; 
+
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
   document.getElementById("video").srcObject = stream;
 
@@ -186,3 +188,4 @@ async function lookupPlate() {
 
 </body>
 </html>
+
